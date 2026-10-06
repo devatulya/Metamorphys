@@ -1,0 +1,30 @@
+{
+  "name": "metamorphys-backend",
+  "version": "1.0.0",
+  "description": "Backend API Gateway and Data Management service for Metamorphys PS14 Change Detection",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/api.test.js"
+  },
+  "keywords": [
+    "change-detection",
+    "geospatial",
+    "gis",
+    "firebase",
+    "turf",
+    "express"
+  ],
+  "author": "Atulya (Backend & Data Lead)",
+  "license": "ISC",
+  "dependencies": {
+    "@turf/turf": "^7.0.0",
+    "archiver": "^7.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.0",
+    "uuid": "^9.0.1"
+  }
+}
