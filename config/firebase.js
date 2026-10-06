@@ -5,30 +5,36 @@ const fs = require('fs');
 let db = null;
 let isMock = false;
 
-// Attempt to initialize Firebase Admin SDK
+const PROJECT_ID = 'metamorphys-6efd5';
+
+// Attempt to initialize Firebase Admin SDK using Service Account Credentials
 try {
+  let serviceAccount = null;
+
   if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH && fs.existsSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH)) {
-    const serviceAccount = require(path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH));
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
-    db = admin.firestore();
-    console.log('[Firebase] Initialized with Service Account Key file.');
+    serviceAccount = require(path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH));
+  } else if (fs.existsSync(path.resolve(__dirname, '../firebase-key.json'))) {
+    serviceAccount = require(path.resolve(__dirname, '../firebase-key.json'));
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  }
+
+  if (serviceAccount) {
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert(serviceAccount),
+      projectId: PROJECT_ID
     });
     db = admin.firestore();
-    console.log('[Firebase] Initialized with Service Account JSON env var.');
+    console.log(`[Firebase] Initialized Admin SDK with Service Account Key for project "${PROJECT_ID}".`);
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
     admin.initializeApp({
-      credential: admin.credential.applicationDefault()
+      credential: admin.credential.applicationDefault(),
+      projectId: PROJECT_ID
     });
     db = admin.firestore();
-    console.log('[Firebase] Initialized with Application Default Credentials.');
+    console.log(`[Firebase] Initialized Admin SDK with Application Default Credentials for project "${PROJECT_ID}".`);
   } else {
-    throw new Error('No Firebase credentials found. Falling back to local offline mock database.');
+    throw new Error(`No Firebase service account key found (placed as firebase-key.json or via env). Falling back to standalone mock database engine.`);
   }
 } catch (err) {
   console.log(`[Firebase] ${err.message}`);
@@ -134,5 +140,6 @@ try {
 
 module.exports = {
   db,
-  isMock
+  isMock,
+  projectId: PROJECT_ID
 };
