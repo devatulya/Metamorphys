@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const turf = require('@turf/turf');
 const { db } = require('../config/firebase');
 const { checkAndTriggerAlert } = require('./alerts');
+const { sanitizeForFirestore, restoreFromFirestore } = require('../utils/geoHelper');
 
 /**
  * Asynchronous Change Detection Worker Loop
@@ -22,7 +23,7 @@ async function processJobAsync(jobId, aoiId) {
       throw new Error(`AOI ${aoiId} not found`);
     }
 
-    const aoi = aoiDoc.data();
+    const aoi = restoreFromFirestore(aoiDoc.data());
     const aoiGeom = aoi.geometry;
 
     // 3. Register Imagery Scenes (Before & After)
@@ -91,7 +92,7 @@ async function processJobAsync(jobId, aoiId) {
       created_at: new Date().toISOString()
     };
 
-    await db.collection('change_results').doc(changeResultId).set(changeResult);
+    await db.collection('change_results').doc(changeResultId).set(sanitizeForFirestore(changeResult));
 
     // 5. Update Job Status to 'done'
     const completedAt = new Date().toISOString();

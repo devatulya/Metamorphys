@@ -3,6 +3,7 @@ const router = express.Router();
 const turf = require('@turf/turf');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../config/firebase');
+const { sanitizeForFirestore, restoreFromFirestore } = require('../utils/geoHelper');
 
 /**
  * Helper: Validate GeoJSON geometry with Turf
@@ -65,7 +66,7 @@ router.post('/', async (req, res) => {
       updated_at: now
     };
 
-    await db.collection('aois').doc(aoiId).set(aoiData);
+    await db.collection('aois').doc(aoiId).set(sanitizeForFirestore(aoiData));
 
     return res.status(201).json(aoiData);
   } catch (err) {
@@ -81,7 +82,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const snapshot = await db.collection('aois').get();
-    const aois = snapshot.docs.map((doc) => doc.data());
+    const aois = snapshot.docs.map((doc) => restoreFromFirestore(doc.data()));
     return res.json({ count: aois.length, aois });
   } catch (err) {
     console.error('Error listing AOIs:', err);
@@ -102,15 +103,15 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: `AOI with ID "${id}" not found` });
     }
 
-    const aoi = doc.data();
+    const aoi = restoreFromFirestore(doc.data());
 
     // Fetch associated scenes
     const scenesSnap = await db.collection('scenes').where('aoi_id', '==', id).get();
-    const scenes = scenesSnap.docs.map((d) => d.data());
+    const scenes = scenesSnap.docs.map((d) => restoreFromFirestore(d.data()));
 
     // Fetch associated change results
     const changesSnap = await db.collection('change_results').where('aoi_id', '==', id).get();
-    const changes = changesSnap.docs.map((d) => d.data());
+    const changes = changesSnap.docs.map((d) => restoreFromFirestore(d.data()));
 
     return res.json({
       ...aoi,
@@ -173,7 +174,7 @@ router.get('/:id/scenes', async (req, res) => {
   try {
     const { id } = req.params;
     const snapshot = await db.collection('scenes').where('aoi_id', '==', id).get();
-    const scenes = snapshot.docs.map((doc) => doc.data());
+    const scenes = snapshot.docs.map((doc) => restoreFromFirestore(doc.data()));
     return res.json({ aoi_id: id, count: scenes.length, scenes });
   } catch (err) {
     console.error('Error fetching scenes:', err);
@@ -189,7 +190,7 @@ router.get('/:id/changes', async (req, res) => {
   try {
     const { id } = req.params;
     const snapshot = await db.collection('change_results').where('aoi_id', '==', id).get();
-    const changes = snapshot.docs.map((doc) => doc.data());
+    const changes = snapshot.docs.map((doc) => restoreFromFirestore(doc.data()));
     return res.json({ aoi_id: id, count: changes.length, changes });
   } catch (err) {
     console.error('Error fetching change results:', err);
@@ -205,7 +206,7 @@ router.get('/:id/alerts', async (req, res) => {
   try {
     const { id } = req.params;
     const snapshot = await db.collection('alerts').where('aoi_id', '==', id).get();
-    const alerts = snapshot.docs.map((doc) => doc.data());
+    const alerts = snapshot.docs.map((doc) => restoreFromFirestore(doc.data()));
     return res.json({ aoi_id: id, count: alerts.length, alerts });
   } catch (err) {
     console.error('Error fetching alerts:', err);

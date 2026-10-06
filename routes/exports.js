@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const { db } = require('../config/firebase');
+const { restoreFromFirestore } = require('../utils/geoHelper');
 
 /**
  * GET /api/changes/:id/export?format=geojson|shapefile|geotiff
@@ -19,7 +20,7 @@ router.get('/changes/:id/export', async (req, res) => {
       return res.status(404).json({ error: `Change result with ID "${id}" not found` });
     }
 
-    const changeData = changeDoc.data();
+    const changeData = restoreFromFirestore(changeDoc.data());
 
     // 1. GeoJSON format
     if (format === 'geojson') {
